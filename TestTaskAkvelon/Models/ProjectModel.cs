@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TestTaskAkvelon.Models
 {
+    [Table("Project")]
     public class ProjectModel : IIdentifiable
     {
         public int Id { get; set; }
@@ -14,11 +16,11 @@ namespace TestTaskAkvelon.Models
         [Required]
         public DateTime CompletionDate { get; set; }
         [Required]
-        public int MyProperty { get; set; }
-        [Required]
         public ProjectStatus ProjectStatus { get; set; }
         [Required]
         public int Priority { get; set; }
+
+        public virtual ICollection<TaskModel> Tasks { get; set; }
     }
 
     public enum ProjectStatus
