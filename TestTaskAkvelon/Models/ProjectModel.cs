@@ -5,6 +5,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TestTaskAkvelon.Models
 {
+    /// <summary>
+    /// 
+    /// </summary>
     [Table("Project")]
     public class ProjectModel : IIdentifiable
     {

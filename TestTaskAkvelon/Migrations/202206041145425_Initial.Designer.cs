@@ -13,7 +13,7 @@ namespace TestTaskAkvelon.Migrations
         
         string IMigrationMetadata.Id
         {
-            get { return "202206031053375_Initial"; }
+            get { return "202206041145425_Initial"; }
         }
         
         string IMigrationMetadata.Source

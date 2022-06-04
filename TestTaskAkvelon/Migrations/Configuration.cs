@@ -20,27 +20,38 @@ namespace TestTaskAkvelon.Migrations
             //  You can use the DbSet<T>.AddOrUpdate() helper extension method 
             //  to avoid creating duplicate seed data. E.g.
             //
+            DateTime startDate1 = DateTime.Parse("1/06/2022");
+            DateTime startDate2 = DateTime.Parse("5/06/2022");
+            DateTime startDate3 = DateTime.Parse("1/06/2022");
 
-            DateTime completionDate1 = DateTime.Parse("12/10/22");
-            DateTime completionDate2 = DateTime.Parse("11/10/22");
-            DateTime completionDate3 = DateTime.Parse("15/10/22");
-            DateTime startDate = DateTime.Parse("10/10/22");
-            DateTime startDate2 = DateTime.Parse("10/10/22");
+            DateTime expDate1 = startDate1 + TimeSpan.FromDays(10);
+            DateTime expDate2 = startDate2 + TimeSpan.FromDays(10);
+            DateTime expDate3 = startDate3 + TimeSpan.FromDays(2);
 
-            context.ProjectModels.AddOrUpdate(p => p.Id,
+            context.ProjectModels.AddOrUpdate(
+              p => p.Id,
+              new ProjectModel { Id = 1, Name = "Project 1", StartDate =  startDate1, CompletionDate = expDate1, ProjectStatus = ProjectStatus.Active, Priority = 10},
+              new ProjectModel { Id = 2, Name = "Project 2", StartDate = startDate2, CompletionDate = expDate2, ProjectStatus = ProjectStatus.NotStarted, Priority = 5 },
+              new ProjectModel { Id = 3, Name = "Project 3", StartDate = startDate3, CompletionDate = expDate3, ProjectStatus = ProjectStatus.Completed, Priority = 3 }
+            );
 
-                new ProjectModel() { Id = 1, Name = "Project 1", CompletionDate = completionDate1, Priority = 10, ProjectStatus = ProjectStatus.Active, StartDate = startDate},
-                new ProjectModel() { Id = 2, Name = "Project 2", CompletionDate = completionDate2, Priority = 10, ProjectStatus = ProjectStatus.Completed, StartDate = startDate },
-                new ProjectModel() { Id = 3, Name = "Project 3", CompletionDate = completionDate3, Priority = 10, ProjectStatus = ProjectStatus.NotStarted, StartDate = startDate2 }
+
+            context.TaskModels.AddOrUpdate(
+                t => t.Id,
+                // Task for project 1
+                new TaskModel() { Id = 1, Name = "Task 1", Description = "Some description for task 1", TaskStatus = TaskStatus.ToDO, Priority = 5, ProjectId = 1 },
+                new TaskModel() { Id = 2, Name = "Task 2", Description = "Some description for task 2", TaskStatus = TaskStatus.InProgress, Priority = 5, ProjectId = 1 },
+                new TaskModel() { Id = 3, Name = "Task 3", Description = "Some description for task 3", TaskStatus = TaskStatus.Done, Priority = 5, ProjectId = 1 },
+                // Tasks for project 2
+                new TaskModel() { Id = 4, Name = "Task 4", Description = "Some description for task 4", TaskStatus = TaskStatus.ToDO, Priority = 5, ProjectId = 2 },
+                new TaskModel() { Id = 5, Name = "Task 5", Description = "Some description for task 5", TaskStatus = TaskStatus.ToDO, Priority = 5, ProjectId = 2 },
+                new TaskModel() { Id = 6, Name = "Task 6", Description = "Some description for task 6", TaskStatus = TaskStatus.ToDO, Priority = 5, ProjectId = 2 },
+                // Tasks for project 3
+                new TaskModel() { Id = 7, Name = "Task 7", Description = "Some description for task 7", TaskStatus = TaskStatus.Done, Priority = 5, ProjectId = 3 },
+                new TaskModel() { Id = 8, Name = "Task 8", Description = "Some description for task 8", TaskStatus = TaskStatus.Done, Priority = 5, ProjectId = 3 },
+                new TaskModel() { Id = 9, Name = "Task 9", Description = "Some description for task 9", TaskStatus = TaskStatus.Done, Priority = 5, ProjectId = 3 }
                 );
-                
 
-            context.TaskModels.AddOrUpdate(t => t.Id,
-                new TaskModel() { Id = 1, Name = "task 1", Description = "Some test task 1", Priority = 10, TaskStatus = TaskStatus.ToDO, ProjectId = 1},
-                new TaskModel() { Id = 2, Name = "task 2", Description = "Some test task 2", Priority = 5, TaskStatus = TaskStatus.Done, ProjectId = 2 },
-                new TaskModel() { Id = 3, Name = "task 3", Description = "Some test task 3", Priority = 7, TaskStatus = TaskStatus.InProgress, ProjectId = 1 },
-                new TaskModel() { Id = 4, Name = "task 4", Description = "Some test task 4", Priority = 2, TaskStatus = TaskStatus.ToDO, ProjectId = 3 }
-                );
         }
     }
 }

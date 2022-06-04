@@ -2,125 +2,105 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Net;
-using System.Web;
-using System.Web.Mvc;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Web.Http;
+using System.Web.Http.Description;
 using TestTaskAkvelon.Data;
 using TestTaskAkvelon.Models;
-using TestTaskAkvelon.Services;
 
 namespace TestTaskAkvelon.Controllers
 {
-    public class TaskController : Controller
+    public class TaskController : ApiController
     {
         private ApplicationContext db = new ApplicationContext();
 
-        // GET: Task
-        public async Task<ActionResult> Index()
+        // GET: api/Task
+        public IQueryable<TaskModel> GetTaskModels()
         {
-            var taskModels = db.TaskModels.Include(t => t.Project);
-            return View(await taskModels.ToListAsync());
+            return db.TaskModels;
         }
 
-        // GET: Task/Details/5
-        public async Task<ActionResult> Details(int? id)
+        // GET: api/Task/5
+        [ResponseType(typeof(TaskModel))]
+        public async Task<IHttpActionResult> GetTaskModel(int id)
         {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
             TaskModel taskModel = await db.TaskModels.FindAsync(id);
             if (taskModel == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
-            return View(taskModel);
+
+            return Ok(taskModel);
         }
 
-        // GET: Task/Create
-        public ActionResult Create()
+        // PUT: api/Task/5
+        [ResponseType(typeof(void))]
+        public async Task<IHttpActionResult> PutTaskModel(int id, TaskModel taskModel)
         {
-            ViewBag.ProjectId = new SelectList(db.ProjectModels, "Id", "Name");
-            return View();
-        }
-
-        // POST: Task/Create
-        // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. 
-        // Дополнительные сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Create([Bind(Include = "Id,Name,TaskStatus,Description,Priority,ProjectId")] TaskModel taskModel)
-        {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                db.TaskModels.Add(taskModel);
+                return BadRequest(ModelState);
+            }
+
+            if (id != taskModel.Id)
+            {
+                return BadRequest();
+            }
+
+            db.Entry(taskModel).State = EntityState.Modified;
+
+            try
+            {
                 await db.SaveChangesAsync();
-                return RedirectToAction("Index");
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!TaskModelExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
             }
 
-            ViewBag.ProjectId = new SelectList(db.ProjectModels, "Id", "Name", taskModel.ProjectId);
-            return View(taskModel);
+            return StatusCode(HttpStatusCode.NoContent);
         }
 
-        // GET: Task/Edit/5
-        public async Task<ActionResult> Edit(int? id)
+        // POST: api/Task
+        [ResponseType(typeof(TaskModel))]
+        public async Task<IHttpActionResult> PostTaskModel(TaskModel taskModel)
         {
-            if (id == null)
+            if (!ModelState.IsValid)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest(ModelState);
             }
+
+            db.TaskModels.Add(taskModel);
+            await db.SaveChangesAsync();
+
+            return CreatedAtRoute("DefaultApi", new { id = taskModel.Id }, taskModel);
+        }
+
+        // DELETE: api/Task/5
+        [ResponseType(typeof(TaskModel))]
+        public async Task<IHttpActionResult> DeleteTaskModel(int id)
+        {
             TaskModel taskModel = await db.TaskModels.FindAsync(id);
             if (taskModel == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
-            ViewBag.ProjectId = new SelectList(db.ProjectModels, "Id", "Name", taskModel.ProjectId);
-            return View(taskModel);
-        }
 
-        // POST: Task/Edit/5
-        // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. 
-        // Дополнительные сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Edit([Bind(Include = "Id,Name,TaskStatus,Description,Priority,ProjectId")] TaskModel taskModel)
-        {
-            if (ModelState.IsValid)
-            {
-                db.Entry(taskModel).State = EntityState.Modified;
-                await db.SaveChangesAsync();
-                return RedirectToAction("Index");
-            }
-            ViewBag.ProjectId = new SelectList(db.ProjectModels, "Id", "Name", taskModel.ProjectId);
-            return View(taskModel);
-        }
-
-        // GET: Task/Delete/5
-        public async Task<ActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            TaskModel taskModel = await db.TaskModels.FindAsync(id);
-            if (taskModel == null)
-            {
-                return HttpNotFound();
-            }
-            return View(taskModel);
-        }
-
-        // POST: Task/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> DeleteConfirmed(int id)
-        {
-            TaskModel taskModel = await db.TaskModels.FindAsync(id);
             db.TaskModels.Remove(taskModel);
             await db.SaveChangesAsync();
-            return RedirectToAction("Index");
+
+            return Ok(taskModel);
         }
 
         protected override void Dispose(bool disposing)
@@ -130,6 +110,11 @@ namespace TestTaskAkvelon.Controllers
                 db.Dispose();
             }
             base.Dispose(disposing);
+        }
+
+        private bool TaskModelExists(int id)
+        {
+            return db.TaskModels.Count(e => e.Id == id) > 0;
         }
     }
 }
