@@ -2,119 +2,105 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Net;
-using System.Web;
-using System.Web.Mvc;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Web.Http;
+using System.Web.Http.Description;
 using TestTaskAkvelon.Data;
 using TestTaskAkvelon.Models;
 
 namespace TestTaskAkvelon.Controllers
 {
-    public class ProjectController : Controller
+    public class ProjectController : ApiController
     {
         private ApplicationContext db = new ApplicationContext();
 
-        // GET: Project
-        public async Task<ActionResult> Index()
+        // GET: api/Project
+        public IQueryable<ProjectModel> GetProjectModels()
         {
-            return View(await db.ProjectModels.ToListAsync());
+            return db.ProjectModels;
         }
 
-        // GET: Project/Details/5
-        public async Task<ActionResult> Details(int? id)
+        // GET: api/Project/5
+        [ResponseType(typeof(ProjectModel))]
+        public async Task<IHttpActionResult> GetProjectModel(int id)
         {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
             ProjectModel projectModel = await db.ProjectModels.FindAsync(id);
             if (projectModel == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
-            return View(projectModel);
+
+            return Ok(projectModel);
         }
 
-        // GET: Project/Create
-        public ActionResult Create()
+        // PUT: api/Project/5
+        [ResponseType(typeof(void))]
+        public async Task<IHttpActionResult> PutProjectModel(int id, ProjectModel projectModel)
         {
-            return View();
-        }
-
-        // POST: Project/Create
-        // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. 
-        // Дополнительные сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Create([Bind(Include = "Id,Name,StartDate,CompletionDate,MyProperty,ProjectStatus,Priority")] ProjectModel projectModel)
-        {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                db.ProjectModels.Add(projectModel);
+                return BadRequest(ModelState);
+            }
+
+            if (id != projectModel.Id)
+            {
+                return BadRequest();
+            }
+
+            db.Entry(projectModel).State = EntityState.Modified;
+
+            try
+            {
                 await db.SaveChangesAsync();
-                return RedirectToAction("Index");
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ProjectModelExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
             }
 
-            return View(projectModel);
+            return StatusCode(HttpStatusCode.NoContent);
         }
 
-        // GET: Project/Edit/5
-        public async Task<ActionResult> Edit(int? id)
+        // POST: api/Project
+        [ResponseType(typeof(ProjectModel))]
+        public async Task<IHttpActionResult> PostProjectModel(ProjectModel projectModel)
         {
-            if (id == null)
+            if (!ModelState.IsValid)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest(ModelState);
             }
+
+            db.ProjectModels.Add(projectModel);
+            await db.SaveChangesAsync();
+
+            return CreatedAtRoute("DefaultApi", new { id = projectModel.Id }, projectModel);
+        }
+
+        // DELETE: api/Project/5
+        [ResponseType(typeof(ProjectModel))]
+        public async Task<IHttpActionResult> DeleteProjectModel(int id)
+        {
             ProjectModel projectModel = await db.ProjectModels.FindAsync(id);
             if (projectModel == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
-            return View(projectModel);
-        }
 
-        // POST: Project/Edit/5
-        // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. 
-        // Дополнительные сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Edit([Bind(Include = "Id,Name,StartDate,CompletionDate,MyProperty,ProjectStatus,Priority")] ProjectModel projectModel)
-        {
-            if (ModelState.IsValid)
-            {
-                db.Entry(projectModel).State = EntityState.Modified;
-                await db.SaveChangesAsync();
-                return RedirectToAction("Index");
-            }
-            return View(projectModel);
-        }
-
-        // GET: Project/Delete/5
-        public async Task<ActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            ProjectModel projectModel = await db.ProjectModels.FindAsync(id);
-            if (projectModel == null)
-            {
-                return HttpNotFound();
-            }
-            return View(projectModel);
-        }
-
-        // POST: Project/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> DeleteConfirmed(int id)
-        {
-            ProjectModel projectModel = await db.ProjectModels.FindAsync(id);
             db.ProjectModels.Remove(projectModel);
             await db.SaveChangesAsync();
-            return RedirectToAction("Index");
+
+            return Ok(projectModel);
         }
 
         protected override void Dispose(bool disposing)
@@ -124,6 +110,11 @@ namespace TestTaskAkvelon.Controllers
                 db.Dispose();
             }
             base.Dispose(disposing);
+        }
+
+        private bool ProjectModelExists(int id)
+        {
+            return db.ProjectModels.Count(e => e.Id == id) > 0;
         }
     }
 }
